@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VELORA - Gestão Patrimonial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Gerador de QR Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Leitor de QR Code via Câmera Real -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-view" class="login-container">
+        <div class="login-box fade-in">
+            <img src="elora (2).png" alt="Velora Logo" class="logo-image" onerror="this.style.display='none'">
+            <h1 style="color: var(--primary); margin-bottom: 5px;">VELORA</h1>
+            <p class="login-subtitle">Acesso ao Sistema</p>
+            <div style="font-size: 0.8rem; color: var(--text-dark); opacity: 0.85; margin-bottom: 15px; text-align: left; background: #f3e8ff; padding: 12px; border-radius: 8px; border: 1px solid var(--primary-light);">
+                <strong>Logins para teste:</strong><br>
+                Admin: <code>admin / admin</code><br>
+                Gestor: <code>gestor / gestor</code><br>
+                Colab: <code>colab / colab</code>
+            </div>
+            <input type="text" placeholder="Usuário" class="form-input" id="user-input">
+            <input type="password" placeholder="Senha" class="form-input" id="pass-input" onkeypress="if(event.key === 'Enter') app.login()">
+            <button class="btn-primary" onclick="app.login()" style="width: 100%;">Entrar no Sistema</button>
+        </div>
+    </div>
+
+    <!-- APLICAÇÃO PRINCIPAL -->
+    <div id="app-view" class="app-layout hidden">
+        <aside id="sidebar">
+            <div class="brand-container">
+                <h2 style="color: var(--primary); font-weight: 700; letter-spacing: 1px;">VELORA</h2>
+            </div>
+            
+            <div class="user-profile">
+                <div class="avatar"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="user-info">
+                    <span id="display-user-name" class="user-name">Nome</span>
+                    <span id="display-user-role" class="badge badge-purple" style="font-size: 0.7rem; margin-top: 4px;">Cargo</span>
+                </div>
+            </div>
+
+            <nav id="main-nav">
+                <button class="nav-btn" data-target="dashboard-view" id="nav-dashboard" onclick="app.activateNav('nav-dashboard', 'dashboard-view')"><i class="fa-solid fa-chart-pie"></i><span>Visão Geral</span></button>
+                <button class="nav-btn" data-target="assets-view" id="nav-assets" onclick="app.activateNav('nav-assets', 'assets-view')"><i class="fa-solid fa-qrcode"></i><span>Gestão de Ativos</span></button>
+                <button class="nav-btn" data-target="mov-view" id="nav-mov" onclick="app.activateNav('nav-mov', 'mov-view')"><i class="fa-solid fa-clock-rotate-left"></i><span>Movimentações</span></button>
+                <button class="nav-btn" data-target="my-assets-view" id="nav-my-assets" onclick="app.activateNav('nav-my-assets', 'my-assets-view')"><i class="fa-solid fa-hand-holding-hand"></i><span>Meus Empréstimos</span></button>
+                <button class="nav-btn" data-target="locations-view" id="nav-locations" onclick="app.activateNav('nav-locations', 'locations-view')"><i class="fa-solid fa-list"></i><span>Locais (Lista)</span></button>
+                <button class="nav-btn" data-target="map-view" id="nav-map" onclick="app.activateNav('nav-map', 'map-view')"><i class="fa-solid fa-map-location-dot"></i><span>Planta (Mapa)</span></button>
+                <button class="nav-btn" data-target="admin-panel-view" id="nav-admin-panel" onclick="app.activateNav('nav-admin-panel', 'admin-panel-view')"><i class="fa-solid fa-gears"></i><span>Administração</span></button>
+            </nav>
+            <div class="logout-container">
+                <button class="nav-btn logout-btn" onclick="app.logout()"><i class="fa-solid fa-right-from-bracket"></i><span>Sair da Sessão</span></button>
+            </div>
+        </aside>
+
+        <main id="content">
+            <!-- DASHBOARD -->
+            <section id="dashboard-view" class="page-section hidden fade-in">
+                <header class="page-header">
+                    <h1 class="page-title">Visão Geral</h1>
+                    <p class="page-subtitle">Acompanhe as métricas e o valor total (R$) do seu patrimônio.</p>
+                </header>
+                <div class="metrics-grid" id="metrics-container"></div>
+            </section>
+
+            <!-- GESTÃO DE ATIVOS -->
+            <section id="assets-view" class="page-section hidden">
+                <header class="page-header">
+                    <h1 class="page-title">Inventário e Identificação</h1>
+                    <p class="page-subtitle">Consulte equipamentos, valores, registre empréstimos e leia etiquetas pela câmera.</p>
+                </header>
+                <div class="action-bar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar por nome, código ou RFID..." onkeyup="app.searchAsset()">
+                    </div>
+                    <button class="btn-primary" id="btn-add-asset" onclick="app.addAsset()"><i class="fa-solid fa-plus"></i> Novo Ativo</button>
+                    <button class="btn-secondary" id="btn-camera-scan" onclick="app.abrirScannerCamera()"><i class="fa-solid fa-camera"></i> Ler QR (Câmera)</button>
+                    <button class="btn-secondary" id="btn-simulate" onclick="app.simulateScan()" style="background: var(--primary-light);"><i class="fa-solid fa-wifi"></i> Simular RFID</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="assetsTable">
+                        <thead>
+                            <tr>
+                                <th>Equipamento</th>
+                                <th>Código / RFID</th>
+                                <th>Valor (R$)</th>
+                                <th>Localização / Posse</th>
+                                <th>Estado</th>
+                                <th id="th-acoes">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- HISTÓRICO DE MOVIMENTAÇÕES -->
+            <section id="mov-view" class="page-section hidden">
+                <header class="page-header">
+                    <h1 class="page-title">Histórico de Movimentação</h1>
+                    <p class="page-subtitle">Auditoria completa de empréstimos, devoluções e ocorrências.</p>
+                </header>
+                <div class="table-container">
+                    <table class="data-table" id="movTable">
+                        <thead>
+                            <tr>
+                                <th>Data / Hora</th>
+                                <th>Ativo</th>
+                                <th>Operação</th>
+                                <th>Gestor / Autor</th>
+                                <th>Colaborador / Destino / Detalhes</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- MEUS EMPRÉSTIMOS -->
+            <section id="my-assets-view" class="page-section hidden">
+                <header class="page-header">
+                    <h1 class="page-title">Meus Empréstimos</h1>
+                    <p class="page-subtitle">Histórico de ativos que estão ou estiveram sob sua responsabilidade.</p>
+                </header>
+                <div class="table-container">
+                    <table class="data-table" id="myAssetsTable">
+                        <thead>
+                            <tr>
+                                <th>Equipamento</th>
+                                <th>Código</th>
+                                <th>Local de Destino</th>
+                                <th>Data/Hora Retirada</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- LISTA DE LOCAIS / ENDEREÇOS -->
+            <section id="locations-view" class="page-section hidden">
+                <header class="page-header">
+                    <h1 class="page-title">Locais e Endereços</h1>
+                    <p class="page-subtitle">Lista de setores cadastrados e quantidade de ativos em cada um.</p>
+                </header>
+                <div class="table-container">
+                    <table class="data-table" id="locationsTable">
+                        <thead>
+                            <tr>
+                                <th>Setor / Local</th>
+                                <th>Endereço Físico (Ref.)</th>
+                                <th>Ocupação Atual</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PAINEL ADMINISTRATIVO -->
+            <section id="admin-panel-view" class="page-section hidden">
+                <header class="page-header">
+                    <h1 class="page-title">Administração do Sistema</h1>
+                    <p class="page-subtitle">Cadastros base, relatórios e backup do banco de dados.</p>
+                </header>
+                <div class="metrics-grid">
+                    <div class="metric-card card-interactive" onclick="app.navigate('employees-view')">
+                        <i class="fa-solid fa-users" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 15px;"></i>
+                        <h3>Funcionários</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Gerenciar acessos e colaboradores</p>
+                    </div>
+                    <div class="metric-card card-interactive" onclick="app.navigate('sectors-view')">
+                        <i class="fa-solid fa-building" style="font-size: 2.5rem; color: var(--secondary); margin-bottom: 15px;"></i>
+                        <h3>Setores e Blocos</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Configurar locais físicos</p>
+                    </div>
+                    <div class="metric-card card-interactive" onclick="app.navigate('reports-view')">
+                        <i class="fa-solid fa-file-pdf" style="font-size: 2.5rem; color: var(--primary-light); margin-bottom: 15px;"></i>
+                        <h3>Relatórios</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Visualizar e Exportar PDF</p>
+                    </div>
+                    <div class="metric-card card-interactive" onclick="app.resetDB()" style="border-top-color: #dc2626;">
+                        <i class="fa-solid fa-database" style="font-size: 2.5rem; color: #dc2626; margin-bottom: 15px;"></i>
+                        <h3>Resetar Banco</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Restaurar dados iniciais</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TELA: FUNCIONÁRIOS -->
+            <section id="employees-view" class="page-section hidden">
+                <header class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h1 class="page-title">Gestão de Funcionários</h1>
+                        <p class="page-subtitle">Cadastre novos usuários e colaboradores no sistema.</p>
+                    </div>
+                    <button class="btn-primary" onclick="app.addEmployee()"><i class="fa-solid fa-user-plus"></i> Novo Usuário</button>
+                </header>
+                <div class="table-container">
+                    <table class="data-table" id="employeesTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Login</th>
+                                <th>Nível de Acesso (Role)</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TELA: SETORES E BLOCOS -->
+            <section id="sectors-view" class="page-section hidden">
+                <header class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h1 class="page-title">Gestão de Setores</h1>
+                        <p class="page-subtitle">Cadastre novos locais físicos de destino.</p>
+                    </div>
+                    <button class="btn-primary" onclick="app.addSector()"><i class="fa-solid fa-building-circle-check"></i> Novo Setor</button>
+                </header>
+                <div class="table-container">
+                    <table class="data-table" id="sectorsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome do Setor</th>
+                                <th>Endereço Físico</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TELA DE RELATÓRIOS -->
+            <section id="reports-view" class="page-section hidden">
+                <header class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h1 class="page-title">Relatório Geral de Ativos</h1>
+                        <p class="page-subtitle">Visão completa e valoração patrimonial em Reais (R$).</p>
+                    </div>
+                    <button class="btn-primary" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / Gerar PDF</button>
+                </header>
+                <div class="table-container" style="background: white; padding: 25px; border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="color: var(--text-dark); font-family: 'Poppins', sans-serif;">Inventário Atual Completo</h3>
+                        <span id="report-total-value" class="badge badge-green" style="font-size: 0.95rem; padding: 8px 16px;">Patrimônio Total: R$ 0,00</span>
+                    </div>
+                    <table class="data-table" id="reportTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome / Série</th>
+                                <th>Código / RFID</th>
+                                <th>Valor (R$)</th>
+                                <th>Localização / Posse</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PLANTA DE ENDEREÇAMENTO (MAPA COM IMAGEM CUSTOMIZÁVEL) -->
+            <section id="map-view" class="page-section hidden">
+                <header class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h1 class="page-title">Planta Física</h1>
+                        <p class="page-subtitle">Visualização interativa dos blocos. Carregue a imagem da sua planta baixa.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <label for="map-upload" class="btn-primary" style="cursor: pointer; margin: 0;">
+                            <i class="fa-solid fa-image"></i> Carregar Imagem da Planta
+                        </label>
+                        <input type="file" id="map-upload" accept="image/*" style="display: none;" onchange="app.uploadMapImage(event)">
+                        <button class="btn-secondary" id="btn-reset-map" onclick="app.resetMapImage()" style="background: #64748b; display: none;">
+                            <i class="fa-solid fa-rotate-left"></i> Planta Padrão
+                        </button>
+                    </div>
+                </header>
+                <div class="blueprint-container">
+                    <div id="blueprint-map" class="blueprint-map"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL 1: FORMULÁRIO DE EMPRÉSTIMO (RETIRADA) -->
+    <div id="loan-modal" class="modal hidden">
+        <div class="modal-content fade-in" style="max-width: 480px; text-align: left;">
+            <button class="close-btn" onclick="app.closeModal('loan-modal')"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="color: var(--primary); font-size: 1.4rem; margin-bottom: 4px;"><i class="fa-solid fa-hand-holding-hand"></i> Registrar Empréstimo</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Preencha os dados da retirada do patrimônio.</p>
+            
+            <form id="loan-form" onsubmit="event.preventDefault(); app.confirmarEmprestimo();">
+                <input type="hidden" id="loan-asset-id">
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Ativo / Equipamento:</label>
+                    <input type="text" id="loan-asset-name" class="form-input" readonly style="background: #f1f5f9; font-weight: 600; color: var(--primary); margin-bottom: 0;">
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Gestor Responsável pela Liberação:</label>
+                    <input type="text" id="loan-gestor-name" class="form-input" readonly style="background: #f1f5f9; margin-bottom: 0;">
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Colaborador Responsável (Retirada):</label>
+                    <select id="loan-colab-select" class="form-input" required style="margin-bottom: 0;"></select>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Local de Destino:</label>
+                    <select id="loan-destino-select" class="form-input" required style="margin-bottom: 0;"></select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Data e Horário do Empréstimo:</label>
+                    <input type="datetime-local" id="loan-datetime" class="form-input" required style="margin-bottom: 0;">
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn-secondary" onclick="app.closeModal('loan-modal')" style="background: #e2e8f0; color: var(--text-dark);">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Confirmar Empréstimo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: FORMULÁRIO DE DEVOLUÇÃO -->
+    <div id="return-modal" class="modal hidden">
+        <div class="modal-content fade-in" style="max-width: 450px; text-align: left; border-top-color: var(--secondary);">
+            <button class="close-btn" onclick="app.closeModal('return-modal')"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="color: var(--secondary); font-size: 1.4rem; margin-bottom: 4px;"><i class="fa-solid fa-rotate-left"></i> Registrar Devolução</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Confirme o retorno do equipamento ao estoque.</p>
+            
+            <form id="return-form" onsubmit="event.preventDefault(); app.confirmarDevolucao();">
+                <input type="hidden" id="return-asset-id">
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Ativo Devolvido:</label>
+                    <input type="text" id="return-asset-name" class="form-input" readonly style="background: #f1f5f9; font-weight: 600; margin-bottom: 0;">
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Estava em posse de:</label>
+                    <input type="text" id="return-colab-name" class="form-input" readonly style="background: #f1f5f9; margin-bottom: 0;">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Data e Horário da Devolução:</label>
+                    <input type="datetime-local" id="return-datetime" class="form-input" required style="margin-bottom: 0;">
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn-secondary" onclick="app.closeModal('return-modal')" style="background: #e2e8f0; color: var(--text-dark);">Cancelar</button>
+                    <button type="submit" class="btn-secondary"><i class="fa-solid fa-check"></i> Confirmar Devolução</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: QR CODE GERADO -->
+    <div id="qr-modal" class="modal hidden">
+        <div class="modal-content fade-in">
+            <button class="close-btn" onclick="app.closeModal('qr-modal')"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="qr-title" class="page-subtitle" style="color: var(--primary); font-weight: 700; margin-bottom: 5px;">Etiqueta</h2>
+            <p id="qr-subtitle" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Código</p>
+            <div id="qrcode-render" class="qr-render-area"></div>
+            <button class="btn-primary" onclick="window.print()" style="width: 100%; margin-top: 20px;"><i class="fa-solid fa-print"></i> Imprimir Etiqueta</button>
+        </div>
+    </div>
+
+    <!-- MODAL 4: LEITOR DE CÂMERA QR CODE REAL -->
+    <div id="camera-modal" class="modal hidden">
+        <div class="modal-content fade-in" style="max-width: 450px;">
+            <button class="close-btn" onclick="app.fecharScannerCamera()"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 5px;"><i class="fa-solid fa-camera"></i> Leitor de QR Code</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Aponte a câmera do dispositivo para a etiqueta do ativo.</p>
+            <div id="qr-reader" style="width: 100%; border-radius: 12px; overflow: hidden; border: 2px solid var(--primary-light);"></div>
+            <p id="camera-status" style="font-size: 0.85rem; color: var(--secondary); margin-top: 12px; font-weight: 600;"></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
